@@ -7,7 +7,6 @@ import {
   Crosshair,
   Film,
   Flame,
-  Gamepad2,
   HelpCircle,
   LockKeyhole,
   Play,
@@ -362,7 +361,9 @@ export default function App() {
       <header className="topbar">
         <div className="brand-wrap" onClick={handleBrandClick}>
           <a className="brand" href="https://www.youtube.com/@the_rustyy" target="_blank" rel="noreferrer" aria-label="Rustyy YouTube channel">
-            <span className="brand-mark"><Gamepad2 size={19} strokeWidth={2.2} /></span>
+            <span className="brand-mark brand-mark-img">
+              <img src="/rustyy-icon.png" alt="Rustyy" className="brand-avatar-img" />
+            </span>
             <span className="brand-name">RUSTYY<span className="brand-period">.</span></span>
             <span className="brand-badge">THE 500 QUEST</span>
           </a>
