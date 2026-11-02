@@ -18,13 +18,17 @@ import {
   Trophy,
   User,
   Edit3,
+  Lock,
+  ShieldCheck,
 } from 'lucide-react';
 import type { ChannelVideo, Phase, SubscriberResponse } from './lib/types';
 import { RustyyQuestRunner } from './components/RustyyQuestRunner';
 import { RustyyTargetQuest } from './components/RustyyTargetQuest';
 import { RustyyTrivia } from './components/RustyyTrivia';
 import { ArcadeLeaderboard } from './components/ArcadeLeaderboard';
-import { getPlayerUsername, savePlayerUsername } from './lib/leaderboard';
+import { GamerTagModal } from './components/GamerTagModal';
+import { getActivePilotProfile, PilotProfile } from './lib/auth';
+import { getPlayerUsername } from './lib/leaderboard';
 import { ChannelVideoModal, FloatingVideoBar } from './components/VideoPlayerModal';
 import { CursorParticles } from './components/CursorParticles';
 import { LegendWall } from './components/LegendWall';
@@ -128,9 +132,9 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [lastGameScore, setLastGameScore] = useState<number | undefined>(undefined);
   const [activeGameTab, setActiveGameTab] = useState<'runner' | 'target' | 'trivia' | 'leaderboard'>('runner');
-  const [playerUsername, setPlayerUsername] = useState(() => getPlayerUsername() || '');
-  const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [usernameInput, setUsernameInput] = useState(() => getPlayerUsername() || '');
+  const [activeProfile, setActiveProfile] = useState<PilotProfile | null>(getActivePilotProfile);
+  const [isGamerTagModalOpen, setIsGamerTagModalOpen] = useState(false);
+  const [playerUsername, setPlayerUsername] = useState(() => getActivePilotProfile()?.tag || getPlayerUsername() || '');
   const [brandClickCount, setBrandClickCount] = useState(0);
 
   // Easter eggs hook
@@ -221,13 +225,10 @@ export default function App() {
     }
   };
 
-  const handleSaveGamertag = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = usernameInput.trim().slice(0, 18);
-    if (!clean) return;
-    savePlayerUsername(clean);
-    setPlayerUsername(clean);
-    setIsEditingUsername(false);
+  const handleProfileUpdated = (profile: PilotProfile | null) => {
+    setActiveProfile(profile);
+    const tag = profile ? profile.tag : '';
+    setPlayerUsername(tag);
   };
 
   useEffect(() => {
@@ -567,41 +568,35 @@ export default function App() {
               {/* Player Identity Pill */}
               <div className="arcade-gamertag-bar">
                 <div className="gamertag-bar-info">
-                  <User size={13} className="icon-gold" />
-                  <span className="gamertag-label">PLAYER IDENTITY:</span>
-                  {isEditingUsername ? (
-                    <form onSubmit={handleSaveGamertag} className="gamertag-inline-form">
-                      <input
-                        type="text"
-                        value={usernameInput}
-                        onChange={(e) => setUsernameInput(e.target.value)}
-                        placeholder="Enter your GamerTag..."
-                        maxLength={18}
-                        className="gamertag-input"
-                        autoFocus
-                      />
-                      <button type="submit" className="gamertag-submit-btn">CLAIM TAG</button>
-                    </form>
+                  {activeProfile ? (
+                    <ShieldCheck size={14} className="icon-gold" />
                   ) : (
-                    <div className="gamertag-badge-display">
-                      <span className="gamertag-name">{playerUsername || 'Guest Legend'}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUsernameInput(playerUsername);
-                          setIsEditingUsername(true);
-                        }}
-                        className="gamertag-change-btn"
-                        title="Change your gamer tag"
-                      >
-                        <Edit3 size={11} />
-                        <span>{playerUsername ? 'CHANGE' : 'SET GAMERTAG'}</span>
-                      </button>
-                    </div>
+                    <User size={13} className="icon-gold" />
                   )}
+                  <span className="gamertag-label">PILOT IDENTITY:</span>
+                  <div className="gamertag-badge-display">
+                    <span className="gamertag-name">{activeProfile?.tag || playerUsername || 'Guest Legend'}</span>
+                    {activeProfile ? (
+                      <span className="gamertag-verified-badge" title="Identity Verified & Locked with PIN">
+                        <Lock size={10} />
+                        <span>PIN LOCKED</span>
+                      </span>
+                    ) : (
+                      <span className="gamertag-unverified-badge">UNLOCKED</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsGamerTagModalOpen(true)}
+                      className="gamertag-change-btn"
+                      title="Claim or switch GamerTag callsign"
+                    >
+                      <Edit3 size={11} />
+                      <span>{activeProfile ? 'SWITCH CALLSIGN' : 'LOCK & CLAIM TAG'}</span>
+                    </button>
+                  </div>
                 </div>
                 <div className="gamertag-bar-hint">
-                  <span>ALL SCORES RECORDED TO GLOBAL LEADERBOARD</span>
+                  <span>{activeProfile ? 'SCORES PROTECTED ON SUPABASE GLOBAL LEADERBOARD' : 'LOCK YOUR TAG WITH A PIN SO NO ONE CAN STEAL YOUR CALLSIGN'}</span>
                 </div>
               </div>
             </div>
@@ -672,10 +667,7 @@ export default function App() {
             {activeGameTab === 'leaderboard' && (
               <ArcadeLeaderboard
                 onPlayGame={(game) => setActiveGameTab(game)}
-                onUsernameChange={(newName) => {
-                  setPlayerUsername(newName);
-                  setUsernameInput(newName);
-                }}
+                onOpenGamerTagModal={() => setIsGamerTagModalOpen(true)}
               />
             )}
           </div>
@@ -805,6 +797,13 @@ export default function App() {
             setActiveVideo(list[randomIdx]);
           }
         }}
+      />
+
+      {/* GAMERTAG RESERVATION & AUTHENTICATION MODAL */}
+      <GamerTagModal
+        isOpen={isGamerTagModalOpen}
+        onClose={() => setIsGamerTagModalOpen(false)}
+        onProfileUpdated={handleProfileUpdated}
       />
 
       {/* FULL CHANNEL VIDEO EMBED MODAL */}

@@ -1263,6 +1263,278 @@ button { font: inherit; }
   color: rgba(240, 230, 215, 0.4);
 }
 
+.gamertag-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+}
+.gamertag-unverified-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #facc15;
+}
+
+/* GAMERTAG RESERVATION MODAL */
+.gt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(5, 7, 8, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fade-in 0.25s ease;
+}
+.gt-modal-panel {
+  position: relative;
+  width: min(100%, 480px);
+  background: linear-gradient(150deg, rgba(16, 20, 23, 0.98), rgba(9, 12, 14, 0.99));
+  border: 1px solid rgba(228, 185, 117, 0.35);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7), 0 0 35px rgba(228, 185, 117, 0.12);
+  padding: 28px 24px;
+  animation: slide-up 0.3s ease;
+}
+.gt-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: rgba(240, 230, 215, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.gt-modal-close:hover {
+  color: #fff;
+  transform: rotate(90deg);
+}
+.gt-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.gt-modal-icon-badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(228, 185, 117, 0.12);
+  border: 1px solid rgba(228, 185, 117, 0.35);
+  color: var(--gold-bright);
+}
+.gt-header-text { flex: 1; }
+.gt-kicker {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+}
+.gt-title {
+  margin: 2px 0 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #fff;
+}
+.gt-desc {
+  margin: 0 0 18px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(240, 230, 215, 0.7);
+}
+
+.gt-active-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(228, 185, 117, 0.08);
+  border: 1px solid rgba(228, 185, 117, 0.25);
+  margin-bottom: 18px;
+}
+.gt-active-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gt-active-label {
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(240, 230, 215, 0.5);
+  display: block;
+}
+.gt-active-name {
+  margin: 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold-bright);
+}
+.gt-logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #fb7185;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.gt-logout-btn:hover {
+  background: rgba(244, 63, 94, 0.25);
+  color: #fff;
+}
+
+.gt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.gt-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gt-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(240, 230, 215, 0.6);
+}
+.gt-label-hint {
+  color: rgba(240, 230, 215, 0.35);
+  font-weight: 600;
+}
+.gt-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.gt-input-icon {
+  position: absolute;
+  left: 12px;
+  color: rgba(228, 185, 117, 0.6);
+  pointer-events: none;
+}
+.gt-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: rgba(10, 13, 15, 0.95);
+  border: 1px solid rgba(228, 185, 117, 0.28);
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.gt-input:focus {
+  border-color: var(--gold-bright);
+  box-shadow: 0 0 15px rgba(228, 185, 117, 0.2);
+}
+.gt-pin-input {
+  letter-spacing: 0.25em;
+  font-size: 18px;
+}
+.gt-pin-hint {
+  margin: 4px 0 0;
+  font-size: 9px;
+  color: rgba(240, 230, 215, 0.5);
+  line-height: 1.4;
+}
+
+.gt-status-badge {
+  position: absolute;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+.gt-status-badge.checking {
+  color: rgba(240, 230, 215, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+.gt-status-badge.available {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+}
+.gt-status-badge.claimed {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+
+.gt-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.gt-alert-error {
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  color: #fda4af;
+}
+.gt-alert-success {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.gt-btn-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.gt-submit-btn {
+  flex: 1;
+  justify-content: center;
+  padding: 12px 18px;
+  font-size: 10px;
+}
+.gt-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.gt-cancel-btn {
+  padding: 12px 16px;
+  font-size: 9px;
+}
+
 .lb-nav-btn {
   border-color: rgba(228, 185, 117, 0.3);
 }

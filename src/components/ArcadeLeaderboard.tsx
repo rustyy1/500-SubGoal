@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react';
-import { Trophy, Medal, Flame, Crosshair, HelpCircle, User, Check, Edit3, ArrowRight, RotateCcw } from 'lucide-react';
-import { getLeaderboard, fetchAndSyncLeaderboard, deduplicateLeaderboard, getPlayerUsername, savePlayerUsername, LeaderboardEntry } from '../lib/leaderboard';
+import { Trophy, Medal, Flame, Crosshair, HelpCircle, User, Lock, Edit3, ArrowRight, RotateCcw } from 'lucide-react';
+import { getLeaderboard, fetchAndSyncLeaderboard, deduplicateLeaderboard, getPlayerUsername, LeaderboardEntry } from '../lib/leaderboard';
+import { getActivePilotProfile } from '../lib/auth';
 
 interface ArcadeLeaderboardProps {
   initialGame?: 'target' | 'runner' | 'trivia';
   onPlayGame?: (game: 'target' | 'runner' | 'trivia') => void;
-  onUsernameChange?: (username: string) => void;
+  onOpenGamerTagModal?: () => void;
 }
 
 export function ArcadeLeaderboard({
   initialGame = 'target',
   onPlayGame,
-  onUsernameChange,
+  onOpenGamerTagModal,
 }: ArcadeLeaderboardProps) {
   const [selectedGame, setSelectedGame] = useState<'target' | 'runner' | 'trivia'>(initialGame);
-  const [username, setUsername] = useState(() => getPlayerUsername() || '');
-  const [isEditingUser, setIsEditingUser] = useState(false);
-  const [tempUsername, setTempUsername] = useState(username);
+  const activeProfile = getActivePilotProfile();
+  const username = activeProfile?.tag || getPlayerUsername() || '';
   const [entries, setEntries] = useState<LeaderboardEntry[]>(() => getLeaderboard(initialGame));
 
   useEffect(() => {
@@ -31,17 +31,6 @@ export function ArcadeLeaderboard({
     void fetchAndSyncLeaderboard(game).then((data) => {
       if (data && data.length > 0) setEntries(data);
     });
-  };
-
-  const handleSaveUsername = (e: React.FormEvent) => {
-    e.preventDefault();
-    const clean = tempUsername.trim().slice(0, 18);
-    if (!clean) return;
-    savePlayerUsername(clean);
-    setUsername(clean);
-    setIsEditingUser(false);
-    if (onUsernameChange) onUsernameChange(clean);
-    setEntries(getLeaderboard(selectedGame));
   };
 
   const formatTimeAgo = (timestamp: number) => {
@@ -75,39 +64,23 @@ export function ArcadeLeaderboard({
 
         {/* Player Profile Badge */}
         <div className="player-profile-pill">
-          {isEditingUser ? (
-            <form onSubmit={handleSaveUsername} className="profile-edit-form">
-              <input
-                type="text"
-                value={tempUsername}
-                onChange={(e) => setTempUsername(e.target.value)}
-                placeholder="Enter GamerTag..."
-                maxLength={18}
-                className="profile-input"
-                autoFocus
-              />
-              <button type="submit" className="profile-save-btn" title="Save GamerTag">
-                <Check size={12} />
-              </button>
-            </form>
-          ) : (
-            <div className="profile-display">
-              <User size={13} className="icon-gold" />
-              <span className="profile-label">TAG:</span>
-              <span className="profile-name">{username || 'Guest Legend'}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setTempUsername(username);
-                  setIsEditingUser(true);
-                }}
-                className="profile-edit-btn"
-                title="Change GamerTag"
-              >
-                <Edit3 size={11} />
-              </button>
-            </div>
-          )}
+          <div className="profile-display">
+            {activeProfile ? <Lock size={12} className="icon-gold" /> : <User size={13} className="icon-gold" />}
+            <span className="profile-label">PILOT:</span>
+            <span className="profile-name">{activeProfile?.tag || username || 'Guest Legend'}</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenGamerTagModal) {
+                  onOpenGamerTagModal();
+                }
+              }}
+              className="profile-edit-btn"
+              title="Claim or switch verified GamerTag callsign"
+            >
+              <Edit3 size={11} />
+            </button>
+          </div>
         </div>
       </div>
 

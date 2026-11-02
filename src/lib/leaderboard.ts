@@ -1,4 +1,5 @@
 import { getRemoteLeaderboard, submitRemoteScore } from './supabase';
+import { getActivePilotProfile } from './auth';
 
 const USERNAME_KEY = 'rustyy_player_username_v1';
 const LEADERBOARD_KEY_PREFIX = 'rustyy_leaderboard_';
@@ -37,6 +38,8 @@ const DEFAULT_LEADERBOARDS: Record<'runner' | 'target' | 'trivia', LeaderboardEn
 
 export function getPlayerUsername(): string {
   try {
+    const profile = getActivePilotProfile();
+    if (profile && profile.tag) return profile.tag;
     return localStorage.getItem(USERNAME_KEY) || '';
   } catch {
     return '';
@@ -140,11 +143,13 @@ export function saveScoreToLeaderboard(
   username: string,
   score: number
 ): LeaderboardEntry[] {
+  const profile = getActivePilotProfile();
   const current = getLeaderboard(game);
-  const name = username.trim() || 'Anonymous Legend';
+  const name = (profile?.tag || username || 'Anonymous Legend').trim();
+  const playerId = profile?.id;
 
-  // Fire-and-forget sync to Supabase remote database
-  void submitRemoteScore(game, name, score);
+  // Fire-and-forget sync to Supabase remote database with player ID link
+  void submitRemoteScore(game, name, score, playerId);
 
   const newEntry: LeaderboardEntry = {
     id: `p_${Date.now()}`,
