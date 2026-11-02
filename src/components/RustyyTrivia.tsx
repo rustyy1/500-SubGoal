@@ -50,20 +50,71 @@ const TRIVIA_QUESTIONS: Question[] = [
     ],
     answer: 1,
     explanation: "Reaching 500 triggers screen-filling confetti and unlocks the next secret chapter by the Creator!"
+  },
+  {
+    question: "In Rustyy's chill tactical FPS stream, which 5v5 hero shooter does he drop into?",
+    game: "VALORANT",
+    options: ["Counter-Strike 2", "Valorant", "Overwatch 2", "Apex Legends"],
+    answer: 1,
+    explanation: "Rustyy drops into casual and clutch Valorant gaming sessions!"
+  },
+  {
+    question: "In Rustyy's Elden Ring funny clip 'Ek ka Double kar diya', what happens?",
+    game: "ELDEN RING",
+    options: [
+      "He loses his runes instantly",
+      "Hilarious enemy duplication & combat chaos ensues",
+      "The game glitches out",
+      "He speedruns the entire dungeon"
+    ],
+    answer: 1,
+    explanation: "Pure comedic madness when the fight doubles in difficulty!"
+  },
+  {
+    question: "What is Rustyy's official YouTube channel handle on the platform?",
+    game: "CHANNEL INTEL",
+    options: ["@rustyy_gaming", "@the_rustyy", "@rustyy_official", "@rustyy500"],
+    answer: 1,
+    explanation: "The official YouTube channel is @the_rustyy!"
+  },
+  {
+    question: "In the latest Elden Ring journey episode, what was Rustyy's mission?",
+    game: "ELDEN RING",
+    options: [
+      "Defeating Malenia",
+      "Getting Out Of This Annoyinggg Cave !!!",
+      "Finding the Moonlight Greatsword",
+      "Exploring Leyndell Capital"
+    ],
+    answer: 1,
+    explanation: "Rustyy was navigating his way through an exasperating maze cave!"
+  },
+  {
+    question: "What primary survival tool did Rustyy use to investigate clues in the Blair Witch horror series?",
+    game: "BLAIR WITCH",
+    options: ["Shotgun", "Camcorder & Flashlight", "Drone", "Map Compass"],
+    answer: 1,
+    explanation: "The iconic camcorder tape manipulation and flashlight kept Rustyy alive!"
   }
 ];
+
+function pickRandomTriviaQuestions(): Question[] {
+  const shuffled = [...TRIVIA_QUESTIONS].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 5);
+}
 
 interface TriviaProps {
   onViewLeaderboard?: () => void;
 }
 
 export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
+  const [questions, setQuestions] = useState<Question[]>(pickRandomTriviaQuestions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [completed, setCompleted] = useState(false);
 
-  const currentQ = TRIVIA_QUESTIONS[currentIndex];
+  const currentQ = questions[currentIndex] || questions[0];
 
   const handleSelect = (index: number) => {
     if (selectedAnswer !== null) return;
@@ -74,18 +125,19 @@ export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
   };
 
   const handleNext = () => {
-    if (currentIndex + 1 < TRIVIA_QUESTIONS.length) {
+    if (currentIndex + 1 < questions.length) {
       setCurrentIndex((i) => i + 1);
       setSelectedAnswer(null);
     } else {
       setCompleted(true);
-      const finalScore = score;
+      const finalScore = score + (selectedAnswer === currentQ.answer ? 0 : 0);
       const playerName = getPlayerUsername() || 'Anonymous Legend';
       saveScoreToLeaderboard('trivia', playerName, finalScore);
     }
   };
 
   const restart = () => {
+    setQuestions(pickRandomTriviaQuestions());
     setCurrentIndex(0);
     setSelectedAnswer(null);
     setScore(0);
@@ -103,7 +155,7 @@ export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
         <div className="game-stats">
           <div className="stat-pill">
             <span className="stat-label">QUESTION</span>
-            <span className="stat-value">{currentIndex + 1}/{TRIVIA_QUESTIONS.length}</span>
+            <span className="stat-value">{currentIndex + 1}/{questions.length}</span>
           </div>
           <div className="stat-pill">
             <span className="stat-label">SCORE</span>
@@ -154,7 +206,7 @@ export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
             <div className="trivia-feedback-panel">
               <p className="trivia-explanation">{currentQ.explanation}</p>
               <button className="game-btn-primary next-q-btn" onClick={handleNext} type="button">
-                <span>{currentIndex + 1 < TRIVIA_QUESTIONS.length ? 'NEXT QUESTION' : 'VIEW FINAL SCORE'}</span>
+                <span>{currentIndex + 1 < questions.length ? 'NEXT QUESTION' : 'VIEW FINAL SCORE'}</span>
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -167,7 +219,7 @@ export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
           </div>
           <h2 className="trivia-complete-title">TRIVIA COMPLETE!</h2>
           <p className="trivia-complete-desc">
-            You scored <strong>{score} / {TRIVIA_QUESTIONS.length * 100} PTS</strong>
+            You scored <strong>{score} / {questions.length * 100} PTS</strong>
           </p>
           <p className="trivia-rank-p">
             {score >= 400

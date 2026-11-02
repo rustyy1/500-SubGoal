@@ -193,12 +193,9 @@ export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }
     stateRef.current.mousePos = { x: -100, y: -100 };
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const processShot = (clickX: number, clickY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const clickX = ((e.clientX - rect.left) / rect.width) * canvas.width;
-    const clickY = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
     const s = stateRef.current;
     if (s.gameState !== 'playing') {
@@ -268,6 +265,26 @@ export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }
       setStreak(0);
       playFx('miss');
     }
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const clickX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const clickY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+    processShot(clickX, clickY);
+  };
+
+  const handleCanvasTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas || e.touches.length === 0) return;
+    const rect = canvas.getBoundingClientRect();
+    const touch = e.touches[0];
+    const clickX = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+    const clickY = ((touch.clientY - rect.top) / rect.height) * canvas.height;
+    stateRef.current.mousePos = { x: clickX, y: clickY };
+    processShot(clickX, clickY);
   };
 
   // Timer loop & Game Over
@@ -574,6 +591,7 @@ export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }
           height={240}
           className="game-canvas aimlabs-canvas"
           onClick={handleCanvasClick}
+          onTouchStart={handleCanvasTouchStart}
           onMouseMove={handleCanvasMouseMove}
           onMouseLeave={handleCanvasMouseLeave}
         />

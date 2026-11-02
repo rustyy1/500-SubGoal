@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Copy, MessageCircle, Share2 } from 'lucide-react';
 
 interface ShareModalProps {
@@ -10,6 +10,16 @@ interface ShareModalProps {
 
 export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

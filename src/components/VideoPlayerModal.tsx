@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { ExternalLink, Film, Maximize2, Shuffle, X } from 'lucide-react';
 import type { ChannelVideo } from '../lib/types';
 
@@ -65,6 +66,16 @@ export function ChannelVideoModal({
   isOpen,
   onClose,
 }: VideoPlayerModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !video) return null;
 
   return (

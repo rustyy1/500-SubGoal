@@ -388,7 +388,7 @@ export function RustyyQuestRunner({ onScoreUp, onShareClick, onViewLeaderboard }
         </div>
       </div>
 
-      <div className="canvas-wrapper" onClick={jump}>
+      <div className="canvas-wrapper" onClick={jump} onTouchStart={jump}>
         <canvas
           ref={canvasRef}
           width={580}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Edit3, MessageSquare, Send, Trash2, Users, X } from 'lucide-react';
 import { getRemoteLegendWall, submitRemoteLegendMessage } from '../lib/supabase';
+import { getActivePilotProfile } from '../lib/auth';
 
 const MY_ENTRY_KEY = 'rustyy_my_legend_entry_v1';
 const ALL_CUSTOM_ENTRIES_KEY = 'rustyy_all_custom_entries_v1';
@@ -77,12 +78,23 @@ export function LegendWall() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [myEntry, setMyEntry] = useState<LegendEntry | null>(getMyEntry);
   const [customEntries, setCustomEntries] = useState<LegendEntry[]>(getStoredCustomEntries);
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => getActivePilotProfile()?.tag || '');
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
+
+  // Close expanded drawer on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isExpanded) {
+        setIsExpanded(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isExpanded]);
 
   // Sync entries from Supabase on mount
   useEffect(() => {

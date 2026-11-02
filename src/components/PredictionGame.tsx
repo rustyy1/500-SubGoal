@@ -113,7 +113,19 @@ export function PredictionGame({ currentSubs }: { currentSubs: number | null }) 
           )}
         </div>
 
-        <p className="pred-comeback">Come back to see if your prediction was right! 🔮</p>
+        <div className="pred-footer-row">
+          <p className="pred-comeback">Come back to see if your prediction was right! 🔮</p>
+          <button
+            type="button"
+            onClick={() => {
+              setInputDate(prediction.date);
+              setPrediction(null);
+            }}
+            className="pred-edit-btn"
+          >
+            REVISE
+          </button>
+        </div>
       </div>
     );
   }
