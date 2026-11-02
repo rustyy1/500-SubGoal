@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Check, Copy, MessageCircle, Share2 } from 'lucide-react';
+import { Check, Copy, MessageCircle, MessageSquare, Share2 } from 'lucide-react';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -8,8 +8,40 @@ interface ShareModalProps {
   highScore?: number;
 }
 
+/**
+ * Robust clipboard copy with fallback to hidden textarea for non-secure contexts
+ * or browsers with restrictive permissions.
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back to execCommand below
+    }
+  }
+
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    textArea.style.top = '-9999px';
+    textArea.setAttribute('readonly', '');
+    document.body.appendChild(textArea);
+    textArea.select();
+    const success = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    return success;
+  } catch {
+    return false;
+  }
+}
+
 export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareModalProps) {
-  const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedMsg, setCopiedMsg] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -26,19 +58,31 @@ export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareMo
   const currentCount = subCount ?? 116;
   const remaining = Math.max(0, 500 - currentCount);
 
+  // Clean, direct site invitation URL
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}`.replace(/\/+$/, '') || window.location.href
+    : 'https://youtube.com/@the_rustyy';
+
   const shareText = highScore
     ? `🔥 I just scored ${highScore} pts on the Rustyy 500 Quest arcade! Help @the_rustyy reach 500 subs (${remaining} to go) to unlock the secret creator reveal:`
     : `⚔️ Join the quest! Help @the_rustyy reach 500 YouTube subscribers (${remaining} to go) and unlock the classified reveal:`;
 
-  const shareUrl = window.location.origin;
+  // Copies ONLY the clean invitation link URL
+  const handleCopyLink = async () => {
+    const ok = await copyToClipboard(shareUrl);
+    if (ok) {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    }
+  };
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // fallback
+  // Copies the full message + invitation URL
+  const handleCopyMessage = async () => {
+    const fullText = `${shareText} ${shareUrl}`;
+    const ok = await copyToClipboard(fullText);
+    if (ok) {
+      setCopiedMsg(true);
+      setTimeout(() => setCopiedMsg(false), 2500);
     }
   };
 
@@ -54,7 +98,7 @@ export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareMo
         // user canceled
       }
     } else {
-      handleCopy();
+      await handleCopyLink();
     }
   };
 
@@ -72,6 +116,7 @@ export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareMo
           <button className="vm-icon-btn" onClick={onClose} type="button">✕</button>
         </div>
 
+        {/* Transmission text preview */}
         <div className="share-preview-box">
           <div className="spb-tag">TRANSMISSION PREVIEW</div>
           <p className="spb-text">"{shareText}"</p>
@@ -81,6 +126,28 @@ export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareMo
           </div>
         </div>
 
+        {/* Explicit Visible Invitation Link */}
+        <div className="share-link-input-row">
+          <input
+            type="text"
+            readOnly
+            value={shareUrl}
+            className="share-link-input"
+            onClick={(e) => (e.target as HTMLInputElement).select()}
+            aria-label="Invitation Link URL"
+          />
+          <button
+            type="button"
+            className={`share-input-copy-btn ${copiedLink ? 'share-copied' : ''}`}
+            onClick={handleCopyLink}
+            title="Copy invitation link"
+          >
+            {copiedLink ? <Check size={13} /> : <Copy size={13} />}
+            <span>{copiedLink ? 'COPIED!' : 'COPY LINK'}</span>
+          </button>
+        </div>
+
+        {/* Share buttons */}
         <div className="share-actions-grid">
           <a
             href={whatsappIntent}
@@ -116,12 +183,21 @@ export function ShareCardModal({ isOpen, onClose, subCount, highScore }: ShareMo
           )}
 
           <button
-            onClick={handleCopy}
-            className={`share-btn share-copy ${copied ? 'share-copied' : ''}`}
+            onClick={handleCopyLink}
+            className={`share-btn share-copy ${copiedLink ? 'share-copied' : ''}`}
             type="button"
           >
-            {copied ? <Check size={16} /> : <Copy size={16} />}
-            <span>{copied ? 'LINK & TEXT COPIED!' : 'COPY INVITATION LINK'}</span>
+            {copiedLink ? <Check size={16} /> : <Copy size={16} />}
+            <span>{copiedLink ? 'INVITATION LINK COPIED!' : 'COPY INVITATION LINK'}</span>
+          </button>
+
+          <button
+            onClick={handleCopyMessage}
+            className={`share-btn share-copy-msg ${copiedMsg ? 'share-copied' : ''}`}
+            type="button"
+          >
+            {copiedMsg ? <Check size={16} /> : <MessageSquare size={16} />}
+            <span>{copiedMsg ? 'MESSAGE & LINK COPIED!' : 'COPY FULL MESSAGE + LINK'}</span>
           </button>
         </div>
       </div>
