@@ -1,5 +1,5 @@
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || 'https://cvcjhxdzyptjzgdopmbr.supabase.co').replace(/\/$/, '');
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN2Y2poeGR6eXB0anpnZG9wbWJyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MzYwODAsImV4cCI6MjEwOTIxMjA4MH0.lJ9IqyTASoNARVFTKLK6UiB3T84C0dz4YoRSgBMxb4k';
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 export interface RemoteLeaderboardRow {
   id: string;
