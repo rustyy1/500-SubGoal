@@ -647,6 +647,7 @@ export default function App() {
                   setIsShareModalOpen(true);
                 }}
                 onViewLeaderboard={() => setActiveGameTab('leaderboard')}
+                onOpenGamerTagModal={() => setIsGamerTagModalOpen(true)}
               />
             )}
             {activeGameTab === 'target' && (
@@ -657,11 +658,13 @@ export default function App() {
                   setIsShareModalOpen(true);
                 }}
                 onViewLeaderboard={() => setActiveGameTab('leaderboard')}
+                onOpenGamerTagModal={() => setIsGamerTagModalOpen(true)}
               />
             )}
             {activeGameTab === 'trivia' && (
               <RustyyTrivia
                 onViewLeaderboard={() => setActiveGameTab('leaderboard')}
+                onOpenGamerTagModal={() => setIsGamerTagModalOpen(true)}
               />
             )}
             {activeGameTab === 'leaderboard' && (
@@ -787,17 +790,19 @@ export default function App() {
       )}
 
       {/* FLOATING VIDEO MINI-PLAYER BAR (STICKY AT BOTTOM RIGHT) */}
-      <FloatingVideoBar
-        video={activeVideo}
-        onOpenModal={() => setIsVideoModalOpen(true)}
-        onShuffle={() => {
-          const list = subscriberData.videos || [];
-          if (list.length > 0) {
-            const randomIdx = Math.floor(Math.random() * list.length);
-            setActiveVideo(list[randomIdx]);
-          }
-        }}
-      />
+      {!isVideoModalOpen && (
+        <FloatingVideoBar
+          video={activeVideo}
+          onOpenModal={() => setIsVideoModalOpen(true)}
+          onShuffle={() => {
+            const list = subscriberData.videos || [];
+            if (list.length > 0) {
+              const randomIdx = Math.floor(Math.random() * list.length);
+              setActiveVideo(list[randomIdx]);
+            }
+          }}
+        />
+      )}
 
       {/* GAMERTAG RESERVATION & AUTHENTICATION MODAL */}
       <GamerTagModal

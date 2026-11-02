@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { Crosshair, Play, RotateCcw, Share2, Trophy, Volume2, VolumeX, Zap, Target as TargetIcon } from 'lucide-react';
+import { Crosshair, Lock, Play, RotateCcw, Share2, Trophy, Volume2, VolumeX, Zap, Target as TargetIcon } from 'lucide-react';
 import { getPlayerUsername, saveScoreToLeaderboard } from '../lib/leaderboard';
+import { getActivePilotProfile } from '../lib/auth';
 
 interface GameProps {
   onScoreUp?: (score: number) => void;
   onShareClick?: (score: number) => void;
   onViewLeaderboard?: () => void;
+  onOpenGamerTagModal?: () => void;
 }
 
 interface AimlabsTarget {
@@ -29,7 +31,7 @@ interface Particle {
   maxLife: number;
 }
 
-export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }: GameProps) {
+export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard, onOpenGamerTagModal }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
   const [score, setScore] = useState(0);
@@ -277,6 +279,7 @@ export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }
   };
 
   const handleCanvasTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas || e.touches.length === 0) return;
     const rect = canvas.getBoundingClientRect();
@@ -294,7 +297,8 @@ export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }
     if (gameState === 'playing') {
       timerInterval = window.setInterval(() => {
         const s = stateRef.current;
-        if (s.gameState === 'playing') {
+        // Do not decrement timer while user has switched tabs / minimized
+        if (s.gameState === 'playing' && !document.hidden) {
           s.timeLeft--;
           setTimeLeft(s.timeLeft);
           if (s.timeLeft <= 0) {
@@ -673,6 +677,17 @@ export function RustyyTargetQuest({ onScoreUp, onShareClick, onViewLeaderboard }
                 </button>
               )}
             </div>
+
+            {onOpenGamerTagModal && !getActivePilotProfile() && (
+              <button
+                className="game-btn-claim-tag"
+                onClick={onOpenGamerTagModal}
+                type="button"
+              >
+                <Lock size={12} className="icon-gold" />
+                <span>LOCK THIS SCORE TO YOUR CALLSIGN</span>
+              </button>
+            )}
           </div>
         )}
       </div>

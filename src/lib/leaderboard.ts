@@ -2,6 +2,7 @@ import { getRemoteLeaderboard, submitRemoteScore } from './supabase';
 import { getActivePilotProfile } from './auth';
 
 const USERNAME_KEY = 'rustyy_player_username_v1';
+const GUEST_TAG_KEY = 'rustyy_guest_tag_v1';
 const LEADERBOARD_KEY_PREFIX = 'rustyy_leaderboard_';
 
 export interface LeaderboardEntry {
@@ -36,13 +37,60 @@ const DEFAULT_LEADERBOARDS: Record<'runner' | 'target' | 'trivia', LeaderboardEn
   ],
 };
 
+export function getOrCreateGuestTag(): string {
+  try {
+    const existing = localStorage.getItem(GUEST_TAG_KEY);
+    if (existing) return existing;
+    const generated = `Guest_${Math.floor(100 + Math.random() * 900)}`;
+    localStorage.setItem(GUEST_TAG_KEY, generated);
+    return generated;
+  } catch {
+    return 'Guest_99';
+  }
+}
+
+/**
+ * Transfers all guest scores for the current browser session to the newly
+ * registered or authenticated official GamerTag.
+ */
+export function claimGuestScores(oldGuestTag: string, newProfileTag: string, playerId?: string): void {
+  if (!oldGuestTag || !newProfileTag || oldGuestTag.toLowerCase() === newProfileTag.toLowerCase()) return;
+  const games: Array<'runner' | 'target' | 'trivia'> = ['runner', 'target', 'trivia'];
+
+  for (const game of games) {
+    try {
+      const list = getLeaderboard(game);
+      const guestScore = list.find((e) => e.name.toLowerCase() === oldGuestTag.toLowerCase());
+      if (guestScore && guestScore.score > 0) {
+        // Fire score registration for the new verified profile
+        void submitRemoteScore(game, newProfileTag, guestScore.score, playerId);
+        const updated = deduplicateLeaderboard([
+          {
+            id: `p_${Date.now()}_${game}`,
+            name: newProfileTag,
+            score: guestScore.score,
+            timestamp: Date.now(),
+            isPlayer: true,
+          },
+          ...list.filter((e) => e.name.toLowerCase() !== oldGuestTag.toLowerCase()),
+        ]);
+        localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(updated));
+      }
+    } catch {
+      // no-op
+    }
+  }
+}
+
 export function getPlayerUsername(): string {
   try {
     const profile = getActivePilotProfile();
     if (profile && profile.tag) return profile.tag;
-    return localStorage.getItem(USERNAME_KEY) || '';
+    const legacy = localStorage.getItem(USERNAME_KEY);
+    if (legacy && legacy.trim()) return legacy.trim();
+    return getOrCreateGuestTag();
   } catch {
-    return '';
+    return 'Guest_99';
   }
 }
 

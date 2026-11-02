@@ -174,6 +174,17 @@ export function ArcadeLeaderboard({
           )}
         </div>
 
+        {/* Guest conversion banner */}
+        {!activeProfile && onOpenGamerTagModal && (
+          <div className="lb-guest-prompt" onClick={onOpenGamerTagModal} role="button" tabIndex={0}>
+            <div className="lb-guest-prompt-left">
+              <Lock size={13} className="icon-gold" />
+              <span>Playing as <strong>{username || 'Guest'}</strong>. Claim your callsign &amp; PIN to protect your high scores from being lost!</span>
+            </div>
+            <span className="lb-guest-action">CLAIM CALLSIGN →</span>
+          </div>
+        )}
+
         {/* Player summary banner */}
         <div className="lb-player-summary">
           <div className="lb-summary-left">

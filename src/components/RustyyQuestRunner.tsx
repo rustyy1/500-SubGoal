@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { Play, RotateCcw, Share2, ShieldAlert, Sparkles, Trophy, Volume2, VolumeX } from 'lucide-react';
+import { Lock, Play, RotateCcw, Share2, ShieldAlert, Sparkles, Trophy, Volume2, VolumeX } from 'lucide-react';
 import { getPlayerUsername, saveScoreToLeaderboard } from '../lib/leaderboard';
+import { getActivePilotProfile } from '../lib/auth';
 
 interface GameProps {
   onScoreUp?: (score: number) => void;
   onShareClick?: (score: number) => void;
   onViewLeaderboard?: () => void;
+  onOpenGamerTagModal?: () => void;
 }
 
-export function RustyyQuestRunner({ onScoreUp, onShareClick, onViewLeaderboard }: GameProps) {
+export function RustyyQuestRunner({ onScoreUp, onShareClick, onViewLeaderboard, onOpenGamerTagModal }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
   const [score, setScore] = useState(0);
@@ -30,12 +32,28 @@ export function RustyyQuestRunner({ onScoreUp, onShareClick, onViewLeaderboard }
     frame: 0,
   });
 
-  // Sound effects synthesizer via Web Audio API
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  const getAudioContext = () => {
+    if (!audioCtxRef.current) {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        audioCtxRef.current = new AudioCtx();
+      }
+    }
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume().catch(() => {});
+    }
+    return audioCtxRef.current;
+  };
+
+  // Sound effects synthesizer via Web Audio API (reusing singleton audio context)
   const playFx = (type: 'jump' | 'collect' | 'hit') => {
     if (!soundEnabled) return;
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const ctx = new AudioCtx();
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -436,6 +454,16 @@ export function RustyyQuestRunner({ onScoreUp, onShareClick, onViewLeaderboard }
                 </button>
               )}
             </div>
+            {onOpenGamerTagModal && !getActivePilotProfile() && (
+              <button
+                className="game-btn-claim-tag"
+                onClick={onOpenGamerTagModal}
+                type="button"
+              >
+                <Lock size={12} className="icon-gold" />
+                <span>LOCK THIS SCORE TO YOUR CALLSIGN</span>
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Edit3, MessageSquare, Send, Trash2, Users, X } from 'lucide-react';
-import { getRemoteLegendWall, submitRemoteLegendMessage } from '../lib/supabase';
+import { Edit3, Lock, MessageSquare, Send, Trash2, Users, X } from 'lucide-react';
+import { checkGamerTagAvailability, getRemoteLegendWall, submitRemoteLegendMessage } from '../lib/supabase';
 import { getActivePilotProfile } from '../lib/auth';
 
 const MY_ENTRY_KEY = 'rustyy_my_legend_entry_v1';
@@ -81,9 +81,12 @@ export function LegendWall() {
   const [name, setName] = useState(() => getActivePilotProfile()?.tag || '');
   const [message, setMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const tickerRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
+
+  const activeProfile = getActivePilotProfile();
 
   // Close expanded drawer on Escape
   useEffect(() => {
@@ -94,6 +97,16 @@ export function LegendWall() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isExpanded]);
+
+  // Sync profile callsign when expanded drawer opens
+  useEffect(() => {
+    if (isExpanded) {
+      const active = getActivePilotProfile();
+      if (active && active.tag) {
+        setName(active.tag);
+      }
+    }
   }, [isExpanded]);
 
   // Sync entries from Supabase on mount
@@ -129,9 +142,12 @@ export function LegendWall() {
     ...PRESET_LEGENDS,
   ].sort((a, b) => b.timestamp - a.timestamp);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimName = name.trim();
+    if (isSubmitting) return;
+
+    const currentProfile = getActivePilotProfile();
+    const trimName = (currentProfile?.tag || name).trim();
     const trimMsg = message.trim();
 
     if (!trimName) {
@@ -149,6 +165,22 @@ export function LegendWall() {
     if (trimMsg.length > 100) {
       setFeedback('Message must be 100 characters or less');
       return;
+    }
+
+    // Anti-impersonation check: if user is not authenticated, verify this GamerTag isn't reserved
+    if (!currentProfile) {
+      setIsSubmitting(true);
+      try {
+        const avail = await checkGamerTagAvailability(trimName);
+        if (avail.status === 'claimed') {
+          setFeedback(`"${trimName}" is a locked GamerTag. Please log in with your PIN or pick another name.`);
+          setIsSubmitting(false);
+          return;
+        }
+      } catch {
+        // network fallback
+      }
+      setIsSubmitting(false);
     }
 
     const entryId = myEntry?.id || `user_${Date.now()}`;
@@ -171,7 +203,7 @@ export function LegendWall() {
     saveStoredCustomEntries(updatedCustom);
     setCustomEntries(updatedCustom);
 
-    setName('');
+    setName(currentProfile?.tag || '');
     setMessage('');
     setIsEditing(false);
     setFeedback('Entry posted to the Legend Wall! 🔥');
@@ -304,17 +336,24 @@ export function LegendWall() {
               </div>
 
               <div className="lw-form-row">
-                <input
-                  type="text"
-                  className="lw-input lw-input-name"
-                  placeholder="Your gamertag / name..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value.slice(0, 24))}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  maxLength={24}
-                  required
-                  autoFocus
-                />
+                {activeProfile ? (
+                  <div className="lw-auth-badge" title="Verified GamerTag locked to this session">
+                    <Lock size={12} className="icon-gold" />
+                    <span>CALLSIGN: <strong>{activeProfile.tag}</strong></span>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="lw-input lw-input-name"
+                    placeholder="Your gamertag / name..."
+                    value={name}
+                    onChange={(e) => setName(e.target.value.slice(0, 24))}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    maxLength={24}
+                    required
+                    autoFocus
+                  />
+                )}
                 <input
                   type="text"
                   className="lw-input lw-input-msg"
@@ -325,9 +364,9 @@ export function LegendWall() {
                   maxLength={100}
                   required
                 />
-                <button className="lw-submit-btn" type="submit">
+                <button className="lw-submit-btn" type="submit" disabled={isSubmitting}>
                   <Send size={14} />
-                  <span>{isEditing ? 'UPDATE ENTRY' : 'POST TO WALL'}</span>
+                  <span>{isSubmitting ? 'VERIFYING...' : isEditing ? 'UPDATE ENTRY' : 'POST TO WALL'}</span>
                 </button>
                 {isEditing && (
                   <button

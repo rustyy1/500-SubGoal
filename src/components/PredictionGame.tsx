@@ -27,15 +27,24 @@ function savePrediction(pred: Prediction) {
   }
 }
 
+function parseLocalDate(dateStr: string): Date {
+  const parts = dateStr.split('-');
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  const d = parseInt(parts[2], 10);
+  return new Date(y, m, d);
+}
+
 function daysUntil(dateStr: string): number {
-  const target = new Date(dateStr + 'T00:00:00');
+  const target = parseLocalDate(dateStr);
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   return Math.ceil((target.getTime() - now.getTime()) / 86400000);
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', {
+  const target = parseLocalDate(dateStr);
+  return target.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

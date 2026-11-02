@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { CheckCircle2, ChevronRight, HelpCircle, RotateCcw, Trophy, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, HelpCircle, Lock, RotateCcw, Trophy, XCircle } from 'lucide-react';
 import { getPlayerUsername, saveScoreToLeaderboard } from '../lib/leaderboard';
+import { getActivePilotProfile } from '../lib/auth';
 
 interface Question {
   question: string;
@@ -105,9 +106,10 @@ function pickRandomTriviaQuestions(): Question[] {
 
 interface TriviaProps {
   onViewLeaderboard?: () => void;
+  onOpenGamerTagModal?: () => void;
 }
 
-export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
+export function RustyyTrivia({ onViewLeaderboard, onOpenGamerTagModal }: TriviaProps = {}) {
   const [questions, setQuestions] = useState<Question[]>(pickRandomTriviaQuestions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -244,6 +246,16 @@ export function RustyyTrivia({ onViewLeaderboard }: TriviaProps = {}) {
               </button>
             )}
           </div>
+          {onOpenGamerTagModal && !getActivePilotProfile() && (
+            <button
+              className="game-btn-claim-tag"
+              onClick={onOpenGamerTagModal}
+              type="button"
+            >
+              <Lock size={12} className="icon-gold" />
+              <span>LOCK THIS SCORE TO YOUR CALLSIGN</span>
+            </button>
+          )}
         </div>
       )}
     </div>

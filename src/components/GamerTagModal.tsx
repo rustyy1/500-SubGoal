@@ -13,6 +13,7 @@ import {
   checkGamerTagAvailability,
   registerPlayerAccount,
 } from '../lib/supabase';
+import { claimGuestScores, getOrCreateGuestTag } from '../lib/leaderboard';
 
 interface GamerTagModalProps {
   isOpen: boolean;
@@ -113,6 +114,8 @@ export function GamerTagModal({ isOpen, onClose, onProfileUpdated }: GamerTagMod
         // Register new tag
         const res = await registerPlayerAccount(trimmedTag, pinInput);
         if (res.success && res.profile) {
+          const guestTag = getOrCreateGuestTag();
+          claimGuestScores(guestTag, res.profile.tag, res.profile.id);
           saveActivePilotProfile(res.profile);
           setCurrentProfile(res.profile);
           onProfileUpdated(res.profile);
@@ -127,6 +130,8 @@ export function GamerTagModal({ isOpen, onClose, onProfileUpdated }: GamerTagMod
         // Authenticate existing claimed tag
         const res = await authenticatePlayerAccount(trimmedTag, pinInput);
         if (res.success && res.profile) {
+          const guestTag = getOrCreateGuestTag();
+          claimGuestScores(guestTag, res.profile.tag, res.profile.id);
           saveActivePilotProfile(res.profile);
           setCurrentProfile(res.profile);
           onProfileUpdated(res.profile);
