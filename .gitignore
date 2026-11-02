@@ -1,0 +1,12 @@
+node_modules
+dist
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.local
+.netlify
+.DS_Store
+*service-account*.json
+*.pem
+*.key
