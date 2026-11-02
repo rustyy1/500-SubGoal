@@ -1539,6 +1539,11 @@ button { font: inherit; }
   color: rgba(240, 230, 215, 0.45);
 }
 
+.lb-col-rank {
+  display: flex;
+  align-items: center;
+}
+
 .lb-col-pilot {
   display: flex;
   align-items: center;
@@ -2254,8 +2259,12 @@ button { font: inherit; }
   .count-number { font-size: 52px; }
   .goal-number { font-size: 28px; }
   .arcade-header { flex-direction: column; align-items: flex-start; }
+  .arcade-gamertag-bar { width: 100%; flex-direction: column; align-items: flex-start; gap: 8px; }
   .game-tabs-nav { width: 100%; }
-  .game-nav-btn { flex: 1; justify-content: center; padding: 9px 10px; font-size: 8px; }
+  .game-nav-btn { flex: 1 1 45%; justify-content: center; padding: 9px 8px; font-size: 8px; }
+  .aimlabs-metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lb-table-header, .lb-row { grid-template-columns: 45px 1fr 85px; }
+  .lb-col-date { display: none; }
   .video-cards-grid { grid-template-columns: minmax(0, 1fr); }
   .footerbar { grid-template-columns: 1fr 1fr; font-size: 7px; }
   .footer-centre { display: none; }

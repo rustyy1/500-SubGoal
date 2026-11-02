@@ -89,3 +89,4 @@ export async function submitRemotePrediction(name: string, predicted_date: strin
   });
   return Boolean(result);
 }
+
