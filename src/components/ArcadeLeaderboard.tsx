@@ -21,7 +21,7 @@ export function ArcadeLeaderboard({
 
   useEffect(() => {
     void fetchAndSyncLeaderboard(selectedGame).then((data) => {
-      if (data && data.length > 0) setEntries(data);
+      if (data) setEntries(data);
     });
   }, [selectedGame]);
 
@@ -29,7 +29,7 @@ export function ArcadeLeaderboard({
     setSelectedGame(game);
     setEntries(getLeaderboard(game));
     void fetchAndSyncLeaderboard(game).then((data) => {
-      if (data && data.length > 0) setEntries(data);
+      if (data) setEntries(data);
     });
   };
 

@@ -13,29 +13,60 @@ export interface LeaderboardEntry {
   isPlayer?: boolean;
 }
 
-const DEFAULT_LEADERBOARDS: Record<'runner' | 'target' | 'trivia', LeaderboardEntry[]> = {
-  runner: [
-    { id: 'r1', name: 'Valkyrie_Aim', score: 1420, timestamp: Date.now() - 86400000 * 3 },
-    { id: 'r2', name: 'ShadowBlade_X', score: 1180, timestamp: Date.now() - 86400000 * 5 },
-    { id: 'r3', name: 'EldenLord99', score: 940, timestamp: Date.now() - 86400000 * 7 },
-    { id: 'r4', name: 'CyberSamurai', score: 760, timestamp: Date.now() - 86400000 * 9 },
-    { id: 'r5', name: 'NightOwlGamer', score: 520, timestamp: Date.now() - 86400000 * 11 },
-  ],
-  target: [
-    { id: 't1', name: 'TenZ_Reflex', score: 3850, timestamp: Date.now() - 86400000 * 2 },
-    { id: 't2', name: 'ApexShooter', score: 3200, timestamp: Date.now() - 86400000 * 4 },
-    { id: 't3', name: 'GhostRunner_', score: 2750, timestamp: Date.now() - 86400000 * 6 },
-    { id: 't4', name: 'ValorantAce', score: 2300, timestamp: Date.now() - 86400000 * 8 },
-    { id: 't5', name: 'TacticalPanda', score: 1850, timestamp: Date.now() - 86400000 * 10 },
-  ],
-  trivia: [
-    { id: 'q1', name: 'LoreMaster_Rustyy', score: 500, timestamp: Date.now() - 86400000 * 1 },
-    { id: 'q2', name: 'DarkSoulsVet', score: 400, timestamp: Date.now() - 86400000 * 3 },
-    { id: 'q3', name: 'CrypticWolf', score: 400, timestamp: Date.now() - 86400000 * 4 },
-    { id: 'q4', name: 'IndieGamer_22', score: 300, timestamp: Date.now() - 86400000 * 6 },
-    { id: 'q5', name: 'PixelRaider', score: 300, timestamp: Date.now() - 86400000 * 8 },
-  ],
-};
+// Known preset / dummy entries to purge from all local caches and displays
+const DUMMY_IDS = new Set([
+  'd1', 'd2', 'd3', 'd4', 'd5',
+  't1', 't2', 't3', 't4', 't5',
+  'q1', 'q2', 'q3', 'q4', 'q5',
+]);
+
+const DUMMY_NAMES = new Set([
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'phantombtye',
+  'phantombte',
+  'phantombty',
+  'cybersamurai',
+  'neonrider',
+  'pixelraider',
+  'shadowblade_x',
+  'aimmaster_99',
+  'flickgod',
+  'reflexking',
+  'pixelsniper',
+  'rustyyfan_1',
+  'loremaster_rustyy',
+  'darksoulsvet',
+  'crypticwolf',
+  'indiegamer_22',
+  'anonymous legend',
+]);
+
+function isDummyEntry(entry: LeaderboardEntry): boolean {
+  if (DUMMY_IDS.has(entry.id)) return true;
+  const lowerName = (entry.name || '').trim().toLowerCase();
+  if (!lowerName || DUMMY_NAMES.has(lowerName)) return true;
+  return false;
+}
 
 export function getOrCreateGuestTag(): string {
   try {
@@ -105,13 +136,15 @@ export function savePlayerUsername(username: string): void {
 
 /**
  * Ensures each unique player appears at most once on the leaderboard,
- * displaying ONLY their personal highest score.
+ * displaying ONLY their personal highest score, with all dummy entries excluded.
  */
 export function deduplicateLeaderboard(entries: LeaderboardEntry[]): LeaderboardEntry[] {
   const map = new Map<string, LeaderboardEntry>();
   const activePlayer = getPlayerUsername().trim().toLowerCase();
 
   for (const entry of entries) {
+    if (isDummyEntry(entry)) continue;
+
     const rawName = (entry.name || '').trim();
     if (!rawName) continue;
     const key = rawName.toLowerCase();
@@ -148,31 +181,36 @@ export function getLeaderboard(game: 'runner' | 'target' | 'trivia'): Leaderboar
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return deduplicateLeaderboard(parsed);
+        const cleaned = parsed.filter((e) => !isDummyEntry(e));
+        // Resave stripped cache
+        localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(cleaned));
+        return deduplicateLeaderboard(cleaned);
       }
     }
   } catch {
     // fallback
   }
-  return deduplicateLeaderboard(DEFAULT_LEADERBOARDS[game] || []);
+  return [];
 }
 
 export async function fetchAndSyncLeaderboard(game: 'runner' | 'target' | 'trivia'): Promise<LeaderboardEntry[]> {
-  const local = getLeaderboard(game);
+  const local = getLeaderboard(game).filter((e) => !isDummyEntry(e));
   try {
     const remote = await getRemoteLeaderboard(game);
-    if (remote && Array.isArray(remote) && remote.length > 0) {
+    if (remote && Array.isArray(remote)) {
       const activePlayer = getPlayerUsername().trim().toLowerCase();
-      const mapped: LeaderboardEntry[] = remote.map((row) => ({
-        id: row.id,
-        name: row.name.trim(),
-        score: row.score,
-        timestamp: new Date(row.created_at).getTime(),
-        isPlayer: activePlayer ? row.name.trim().toLowerCase() === activePlayer : false,
-      }));
+      const mapped: LeaderboardEntry[] = remote
+        .map((row) => ({
+          id: row.id,
+          name: row.name.trim(),
+          score: row.score,
+          timestamp: new Date(row.created_at).getTime(),
+          isPlayer: activePlayer ? row.name.trim().toLowerCase() === activePlayer : false,
+        }))
+        .filter((e) => !isDummyEntry(e));
 
-      // Merge remote scores with default and local entries, keeping only the single highest per player
-      const combined = deduplicateLeaderboard([...mapped, ...local, ...DEFAULT_LEADERBOARDS[game]]);
+      // Merge real remote scores with real local scores, keeping highest score per player
+      const combined = deduplicateLeaderboard([...mapped, ...local]);
       try {
         localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(combined));
       } catch {
@@ -192,8 +230,8 @@ export function saveScoreToLeaderboard(
   score: number
 ): LeaderboardEntry[] {
   const profile = getActivePilotProfile();
-  const current = getLeaderboard(game);
-  const name = (profile?.tag || username || 'Anonymous Legend').trim();
+  const current = getLeaderboard(game).filter((e) => !isDummyEntry(e));
+  const name = (profile?.tag || username || getOrCreateGuestTag()).trim();
   const playerId = profile?.id;
 
   // Fire-and-forget sync to Supabase remote database with player ID link
