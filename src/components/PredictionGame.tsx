@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Calendar, Check, Clock, Target } from 'lucide-react';
+import { submitRemotePrediction } from '../lib/supabase';
+import { getPlayerUsername } from '../lib/leaderboard';
 
 const PREDICTION_KEY = 'rustyy_500_prediction_v1';
 
@@ -54,6 +56,10 @@ export function PredictionGame({ currentSubs }: { currentSubs: number | null }) 
     };
     savePrediction(pred);
     setPrediction(pred);
+
+    // Sync to Supabase
+    const username = getPlayerUsername() || 'Anonymous Legend';
+    void submitRemotePrediction(username, inputDate);
   };
 
   const today = new Date().toISOString().split('T')[0];

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Trophy, Medal, Flame, Crosshair, HelpCircle, User, Check, Edit3, ArrowRight, RotateCcw } from 'lucide-react';
-import { getLeaderboard, getPlayerUsername, savePlayerUsername, LeaderboardEntry } from '../lib/leaderboard';
+import { getLeaderboard, fetchAndSyncLeaderboard, getPlayerUsername, savePlayerUsername, LeaderboardEntry } from '../lib/leaderboard';
 
 interface ArcadeLeaderboardProps {
   initialGame?: 'target' | 'runner' | 'trivia';
@@ -19,9 +19,18 @@ export function ArcadeLeaderboard({
   const [tempUsername, setTempUsername] = useState(username);
   const [entries, setEntries] = useState<LeaderboardEntry[]>(() => getLeaderboard(initialGame));
 
+  useEffect(() => {
+    void fetchAndSyncLeaderboard(selectedGame).then((data) => {
+      if (data && data.length > 0) setEntries(data);
+    });
+  }, [selectedGame]);
+
   const refreshLeaderboard = (game: 'target' | 'runner' | 'trivia') => {
     setSelectedGame(game);
     setEntries(getLeaderboard(game));
+    void fetchAndSyncLeaderboard(game).then((data) => {
+      if (data && data.length > 0) setEntries(data);
+    });
   };
 
   const handleSaveUsername = (e: React.FormEvent) => {

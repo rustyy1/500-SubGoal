@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Edit3, MessageSquare, Send, Trash2, Users, X } from 'lucide-react';
+import { getRemoteLegendWall, submitRemoteLegendMessage } from '../lib/supabase';
 
 const MY_ENTRY_KEY = 'rustyy_my_legend_entry_v1';
 const ALL_CUSTOM_ENTRIES_KEY = 'rustyy_all_custom_entries_v1';
@@ -83,6 +84,32 @@ export function LegendWall() {
   const tickerRef = useRef<HTMLDivElement>(null);
   const isHoveredRef = useRef(false);
 
+  // Sync entries from Supabase on mount
+  useEffect(() => {
+    void getRemoteLegendWall().then((rows) => {
+      if (rows && rows.length > 0) {
+        const mapped: LegendEntry[] = rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          message: r.message,
+          timestamp: new Date(r.created_at).getTime(),
+        }));
+        setCustomEntries((prev) => {
+          const ids = new Set(prev.map((p) => p.id));
+          const unique = [...prev];
+          for (const m of mapped) {
+            if (!ids.has(m.id)) {
+              unique.push(m);
+              ids.add(m.id);
+            }
+          }
+          saveStoredCustomEntries(unique);
+          return unique;
+        });
+      }
+    });
+  }, []);
+
   // Combine custom entries and presets, marking user's entry
   const allEntries: LegendEntry[] = [
     ...(myEntry ? [{ ...myEntry, isMine: true }] : []),
@@ -123,6 +150,9 @@ export function LegendWall() {
 
     saveMyEntry(newEntry);
     setMyEntry(newEntry);
+
+    // Fire-and-forget sync to Supabase database
+    void submitRemoteLegendMessage(trimName, trimMsg);
 
     // Update custom entries list
     const updatedCustom = [newEntry, ...customEntries.filter((ce) => ce.id !== entryId)];

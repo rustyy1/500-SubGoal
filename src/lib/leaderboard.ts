@@ -1,3 +1,5 @@
+import { getRemoteLeaderboard, submitRemoteScore } from './supabase';
+
 const USERNAME_KEY = 'rustyy_player_username_v1';
 const LEADERBOARD_KEY_PREFIX = 'rustyy_leaderboard_';
 
@@ -62,6 +64,32 @@ export function getLeaderboard(game: 'runner' | 'target' | 'trivia'): Leaderboar
   return DEFAULT_LEADERBOARDS[game] || [];
 }
 
+export async function fetchAndSyncLeaderboard(game: 'runner' | 'target' | 'trivia'): Promise<LeaderboardEntry[]> {
+  const local = getLeaderboard(game);
+  try {
+    const remote = await getRemoteLeaderboard(game);
+    if (remote && Array.isArray(remote) && remote.length > 0) {
+      const activePlayer = getPlayerUsername().toLowerCase();
+      const mapped: LeaderboardEntry[] = remote.map((row) => ({
+        id: row.id,
+        name: row.name,
+        score: row.score,
+        timestamp: new Date(row.created_at).getTime(),
+        isPlayer: activePlayer ? row.name.toLowerCase() === activePlayer : false,
+      }));
+      try {
+        localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(mapped));
+      } catch {
+        // no-op
+      }
+      return mapped;
+    }
+  } catch {
+    // remote unavailable
+  }
+  return local;
+}
+
 export function saveScoreToLeaderboard(
   game: 'runner' | 'target' | 'trivia',
   username: string,
@@ -70,12 +98,14 @@ export function saveScoreToLeaderboard(
   const current = getLeaderboard(game);
   const name = username.trim() || 'Anonymous Legend';
 
+  // Fire-and-forget sync to Supabase remote database
+  void submitRemoteScore(game, name, score);
+
   // Check if player already exists in leaderboard
   const existingIndex = current.findIndex((item) => item.isPlayer || item.name.toLowerCase() === name.toLowerCase());
 
   let updated: LeaderboardEntry[];
   if (existingIndex >= 0) {
-    // Only update if score is higher
     if (score > current[existingIndex].score) {
       current[existingIndex] = {
         ...current[existingIndex],
@@ -113,4 +143,3 @@ export function saveScoreToLeaderboard(
 
   return top10;
 }
-
