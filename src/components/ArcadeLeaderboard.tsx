@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Medal, Flame, Crosshair, HelpCircle, User, Check, Edit3, ArrowRight, RotateCcw } from 'lucide-react';
-import { getLeaderboard, fetchAndSyncLeaderboard, getPlayerUsername, savePlayerUsername, LeaderboardEntry } from '../lib/leaderboard';
+import { getLeaderboard, fetchAndSyncLeaderboard, deduplicateLeaderboard, getPlayerUsername, savePlayerUsername, LeaderboardEntry } from '../lib/leaderboard';
 
 interface ArcadeLeaderboardProps {
   initialGame?: 'target' | 'runner' | 'trivia';
@@ -59,8 +59,9 @@ export function ArcadeLeaderboard({
   };
 
   const ActiveIcon = gameTitles[selectedGame].icon;
-  const playerEntryIndex = entries.findIndex((e) => e.isPlayer);
-  const playerEntry = playerEntryIndex >= 0 ? entries[playerEntryIndex] : null;
+  const displayedEntries = deduplicateLeaderboard(entries);
+  const playerEntryIndex = displayedEntries.findIndex((e) => e.isPlayer);
+  const playerEntry = playerEntryIndex >= 0 ? displayedEntries[playerEntryIndex] : null;
 
   return (
     <div className="mini-game-box leaderboard-box">
@@ -148,12 +149,12 @@ export function ArcadeLeaderboard({
         </div>
 
         <div className="lb-table-body">
-          {entries.length === 0 ? (
+          {displayedEntries.length === 0 ? (
             <div className="lb-empty">
               <p>No records found for this trial yet. Be the first to set a score!</p>
             </div>
           ) : (
-            entries.map((entry, index) => {
+            displayedEntries.map((entry, index) => {
               const rank = index + 1;
               const isTop3 = rank <= 3;
               const isCurrentPlayer = entry.isPlayer || (username && entry.name.toLowerCase() === username.toLowerCase());

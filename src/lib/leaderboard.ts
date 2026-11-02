@@ -52,16 +52,58 @@ export function savePlayerUsername(username: string): void {
   }
 }
 
+/**
+ * Ensures each unique player appears at most once on the leaderboard,
+ * displaying ONLY their personal highest score.
+ */
+export function deduplicateLeaderboard(entries: LeaderboardEntry[]): LeaderboardEntry[] {
+  const map = new Map<string, LeaderboardEntry>();
+  const activePlayer = getPlayerUsername().trim().toLowerCase();
+
+  for (const entry of entries) {
+    const rawName = (entry.name || '').trim();
+    if (!rawName) continue;
+    const key = rawName.toLowerCase();
+    const existing = map.get(key);
+
+    const isCurrentPlayer = Boolean(entry.isPlayer || (activePlayer && key === activePlayer));
+    const normalizedEntry: LeaderboardEntry = {
+      ...entry,
+      name: rawName,
+      isPlayer: isCurrentPlayer,
+    };
+
+    if (!existing) {
+      map.set(key, normalizedEntry);
+    } else {
+      // Keep only the highest score; if scores tie, keep the most recent
+      if (entry.score > existing.score) {
+        map.set(key, normalizedEntry);
+      } else if (entry.score === existing.score && entry.timestamp > existing.timestamp) {
+        map.set(key, normalizedEntry);
+      }
+    }
+  }
+
+  // Sort descending by score and keep top 10
+  return Array.from(map.values())
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+}
+
 export function getLeaderboard(game: 'runner' | 'target' | 'trivia'): LeaderboardEntry[] {
   try {
     const raw = localStorage.getItem(`${LEADERBOARD_KEY_PREFIX}${game}`);
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return deduplicateLeaderboard(parsed);
+      }
     }
   } catch {
     // fallback
   }
-  return DEFAULT_LEADERBOARDS[game] || [];
+  return deduplicateLeaderboard(DEFAULT_LEADERBOARDS[game] || []);
 }
 
 export async function fetchAndSyncLeaderboard(game: 'runner' | 'target' | 'trivia'): Promise<LeaderboardEntry[]> {
@@ -69,20 +111,23 @@ export async function fetchAndSyncLeaderboard(game: 'runner' | 'target' | 'trivi
   try {
     const remote = await getRemoteLeaderboard(game);
     if (remote && Array.isArray(remote) && remote.length > 0) {
-      const activePlayer = getPlayerUsername().toLowerCase();
+      const activePlayer = getPlayerUsername().trim().toLowerCase();
       const mapped: LeaderboardEntry[] = remote.map((row) => ({
         id: row.id,
-        name: row.name,
+        name: row.name.trim(),
         score: row.score,
         timestamp: new Date(row.created_at).getTime(),
-        isPlayer: activePlayer ? row.name.toLowerCase() === activePlayer : false,
+        isPlayer: activePlayer ? row.name.trim().toLowerCase() === activePlayer : false,
       }));
+
+      // Merge remote scores with default and local entries, keeping only the single highest per player
+      const combined = deduplicateLeaderboard([...mapped, ...local, ...DEFAULT_LEADERBOARDS[game]]);
       try {
-        localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(mapped));
+        localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(combined));
       } catch {
         // no-op
       }
-      return mapped;
+      return combined;
     }
   } catch {
     // remote unavailable
@@ -101,45 +146,22 @@ export function saveScoreToLeaderboard(
   // Fire-and-forget sync to Supabase remote database
   void submitRemoteScore(game, name, score);
 
-  // Check if player already exists in leaderboard
-  const existingIndex = current.findIndex((item) => item.isPlayer || item.name.toLowerCase() === name.toLowerCase());
+  const newEntry: LeaderboardEntry = {
+    id: `p_${Date.now()}`,
+    name,
+    score,
+    timestamp: Date.now(),
+    isPlayer: true,
+  };
 
-  let updated: LeaderboardEntry[];
-  if (existingIndex >= 0) {
-    if (score > current[existingIndex].score) {
-      current[existingIndex] = {
-        ...current[existingIndex],
-        name,
-        score,
-        timestamp: Date.now(),
-        isPlayer: true,
-      };
-      updated = [...current];
-    } else {
-      updated = current;
-    }
-  } else {
-    const newEntry: LeaderboardEntry = {
-      id: `p_${Date.now()}`,
-      name,
-      score,
-      timestamp: Date.now(),
-      isPlayer: true,
-    };
-    updated = [...current, newEntry];
-  }
-
-  // Sort descending by score
-  updated.sort((a, b) => b.score - a.score);
-
-  // Keep top 10
-  const top10 = updated.slice(0, 10);
+  // Add the new score and deduplicate to retain ONLY the highest score for this player
+  const updated = deduplicateLeaderboard([newEntry, ...current]);
 
   try {
-    localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(top10));
+    localStorage.setItem(`${LEADERBOARD_KEY_PREFIX}${game}`, JSON.stringify(updated));
   } catch {
     // no-op
   }
 
-  return top10;
+  return updated;
 }

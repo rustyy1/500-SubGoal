@@ -53,7 +53,7 @@ async function supabaseFetch<T>(endpoint: string, options: RequestInit = {}): Pr
 
 // ----------------- LEADERBOARD -----------------
 export async function getRemoteLeaderboard(game: 'target' | 'runner' | 'trivia'): Promise<RemoteLeaderboardRow[] | null> {
-  return supabaseFetch<RemoteLeaderboardRow[]>(`leaderboard?game=eq.${game}&order=score.desc&limit=10`);
+  return supabaseFetch<RemoteLeaderboardRow[]>(`leaderboard?game=eq.${game}&order=score.desc&limit=60`);
 }
 
 export async function submitRemoteScore(game: 'target' | 'runner' | 'trivia', name: string, score: number): Promise<boolean> {
